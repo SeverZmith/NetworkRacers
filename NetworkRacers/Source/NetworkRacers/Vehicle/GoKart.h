@@ -34,6 +34,18 @@ private:
 
 	void MoveRight(float Value);
 
+	/**
+	 * To replicate movement over a server we begin by applying Server, Reliable, WithValidation as properties in the UFUNCTION().
+	 * Prefix function name with 'Server_'. This is the new name that we will bind our input to in the cpp.
+	 * Definitions of these functions will be split between 2 functions with different suffixes: '_Implementation' & '_Validate' (see cpp).
+	 *
+	 */
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_MoveForward(float Value);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_MoveRight(float Value);
+
 	void ApplyRotation(float DeltaTime);
 
 	void UpdateLocationFromVelocity(float DeltaTime);

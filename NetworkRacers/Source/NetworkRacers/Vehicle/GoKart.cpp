@@ -4,6 +4,7 @@
 
 #include "Components/InputComponent.h"
 #include "Engine/World.h"
+#include "DrawDebugHelpers.h"
 
 
 // Sets default values
@@ -19,6 +20,24 @@ void AGoKart::BeginPlay()
 {
 	Super::BeginPlay();
 	
+}
+
+FString GetEnumText(ENetRole Role)
+{
+	switch (Role)
+	{
+	case ROLE_None:
+		return "None";
+	case ROLE_SimulatedProxy:
+		return "SimulatedProxy";
+	case ROLE_AutonomousProxy:
+		return "AutonomousProxy";
+	case ROLE_Authority:
+		return "Authority";
+	default:
+		return "ERROR";
+	}
+
 }
 
 // Called every frame
@@ -39,6 +58,8 @@ void AGoKart::Tick(float DeltaTime)
 
 	UpdateLocationFromVelocity(DeltaTime);
 
+	DrawDebugString(GetWorld(), FVector(0, 0, 100.f), GetEnumText(Role), this, FColor::White, DeltaTime);
+
 }
 
 // Called to bind functionality to input
@@ -54,22 +75,56 @@ void AGoKart::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 void AGoKart::MoveForward(float Value)
 {
 	Throttle = Value;
+	Server_MoveForward(Value);
 
 }
 
 void AGoKart::MoveRight(float Value)
 {
 	SteeringThrow = Value;
+	Server_MoveRight(Value);
+
+}
+
+// Implementation of the Server_MoveForward function. Suffix: '_Implementation'
+void AGoKart::Server_MoveForward_Implementation(float Value)
+{
+	Throttle = Value;
+
+}
+
+// Server validation of the Server_MoveForward function. Suffix: '_Validate'
+bool AGoKart::Server_MoveForward_Validate(float Value)
+{
+	/**
+	 * This will check that our value is between -1 and 1.
+	 * If the value is not between -1 and 1, then this function will return false.
+	 * If any validation check returns false, the client will be disconnected.
+	 *
+	 */
+	return FMath::Abs(Value) <= 1;
+
+}
+
+void AGoKart::Server_MoveRight_Implementation(float Value)
+{
+	SteeringThrow = Value;
+
+}
+
+bool AGoKart::Server_MoveRight_Validate(float Value)
+{
+	return FMath::Abs(Value) <= 1;
 
 }
 
 FVector AGoKart::GetAirResistance()
 {
 	/**
-	 * -(Direction * Speed^2 * Drag)
-	 *
 	 * GetSafeNormal() is the direction of the vector that the GoKart is travelling.
 	 * SizeSquared() is the speed of the vector, squared.
+	 *
+	 * -(Direction * Speed^2 * Drag)
 	 *
 	 */
 	return -(Velocity.GetSafeNormal() * Velocity.SizeSquared() * DragCoefficient);

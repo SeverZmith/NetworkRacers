@@ -10,7 +10,8 @@ class ANetworkRacersGameMode : public AGameModeBase
 
 public:
 	ANetworkRacersGameMode();
+
+	// Overriding this function from AGameModeBase to adjust SpawnInfo.SpawnCollisionHandlingOverride.
+	APawn* SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer, const FTransform& SpawnTransform);
+
 };
-
-
-
