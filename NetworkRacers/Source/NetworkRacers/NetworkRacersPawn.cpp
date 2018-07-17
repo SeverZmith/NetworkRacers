@@ -215,6 +215,7 @@ void ANetworkRacersPawn::Tick(float Delta)
 			HeadRotation.Yaw += InputComponent->GetAxisValue(LookRightBinding);
 			InternalCamera->RelativeRotation = HeadRotation;
 		}
+
 	}
 }
 
