@@ -88,4 +88,11 @@ private:
 	
 	float SteeringThrow;
 
+	UPROPERTY(ReplicatedUsing = OnRep_ReplicatedTransform)
+	FTransform ReplicatedTransform;
+
+	// Function called when ReplicatedTransform becomes replicated.
+	UFUNCTION()
+	void OnRep_ReplicatedTransform();
+
 };
