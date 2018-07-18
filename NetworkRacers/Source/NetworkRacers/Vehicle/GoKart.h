@@ -50,8 +50,6 @@ private:
 
 	void UpdateLocationFromVelocity(float DeltaTime);
 
-	FVector Velocity;
-
 	// Mass of GoKart (kg)
 	UPROPERTY(EditAnywhere)
 	float Mass = 1000;
@@ -84,8 +82,13 @@ private:
 	UPROPERTY(EditAnywhere)
 	float RollingResistanceCoefficient = 0.015;
 
+	UPROPERTY(Replicated)
+	FVector Velocity;
+
+	UPROPERTY(Replicated)
 	float Throttle;
 	
+	UPROPERTY(Replicated)
 	float SteeringThrow;
 
 	UPROPERTY(ReplicatedUsing = OnRep_ReplicatedTransform)
