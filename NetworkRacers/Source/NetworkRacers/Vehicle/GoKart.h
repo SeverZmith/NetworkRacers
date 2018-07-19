@@ -5,24 +5,9 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "GoKartMovementComponent.h"
+#include "GoKartMovementReplicator.h"
 #include "GoKart.generated.h"
 
-
-USTRUCT()
-struct FGoKartState
-{
-	GENERATED_USTRUCT_BODY()
-
-	UPROPERTY()
-	FTransform Transform;
-
-	UPROPERTY()
-	FVector Velocity;
-
-	UPROPERTY()
-	FGoKartMove PrevMove;
-
-};
 
 UCLASS()
 class NETWORKRACERS_API AGoKart : public APawn
@@ -44,31 +29,14 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	void ClearAcknowledgedMoves(FGoKartMove PrevMove);
-
 	void MoveForward(float Value);
 
 	void MoveRight(float Value);
 
-	/**
-	 * To replicate movement over a server we begin by applying Server, Reliable, WithValidation as properties in the UFUNCTION().
-	 * Prefix function name with 'Server_'. This is the new name that we will bind our input to in the cpp.
-	 * Definitions of these functions will be split between 2 functions with different suffixes: '_Implementation' & '_Validate' (see cpp).
-	 *
-	 */
-	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_SendMove(FGoKartMove Move);
-
-	UPROPERTY(ReplicatedUsing = OnRep_ServerState)
-	FGoKartState ServerState;
-
-	// Function called when ReplicatedTransform becomes replicated.
-	UFUNCTION()
-	void OnRep_ServerState();
-
-	TArray<FGoKartMove> UnacknowledgedMoves;
-
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	UGoKartMovementComponent* MovementComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	UGoKartMovementReplicator* MovementReplicator;
 
 };
