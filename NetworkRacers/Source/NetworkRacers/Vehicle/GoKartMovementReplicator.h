@@ -43,6 +43,8 @@ protected:
 private:
 	void ClearAcknowledgedMoves(FGoKartMove PrevMove);
 
+	void UpdateServerState(const FGoKartMove& Move);
+
 	/**
 	* To replicate movement over a server we begin by applying Server, Reliable, WithValidation as properties in the UFUNCTION().
 	* Prefix function name with 'Server_'. This is the new name that we will bind our input to in the cpp.

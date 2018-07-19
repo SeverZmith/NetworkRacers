@@ -30,7 +30,13 @@ void UGoKartMovementComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// ...
+	if (GetOwnerRole() == ROLE_AutonomousProxy || GetOwner()->GetRemoteRole() == ROLE_SimulatedProxy)
+	{
+		PrevMove = CreateMove(DeltaTime);
+		SimulateMove(PrevMove);
+
+	}
+
 }
 
 void UGoKartMovementComponent::SimulateMove(const FGoKartMove& Move)
