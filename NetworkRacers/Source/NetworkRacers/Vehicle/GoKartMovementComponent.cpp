@@ -2,6 +2,7 @@
 
 #include "GoKartMovementComponent.h"
 #include "GameFramework/GameStateBase.h"
+#include "Engine/World.h"
 
 
 // Sets default values for this component's properties
