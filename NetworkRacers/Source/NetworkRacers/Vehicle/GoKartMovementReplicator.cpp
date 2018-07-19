@@ -54,7 +54,7 @@ void UGoKartMovementReplicator::TickComponent(float DeltaTime, ELevelTick TickTy
 	// If we are being observed by other clients.
 	if (GetOwnerRole() == ROLE_SimulatedProxy)
 	{
-		MovementComponent->SimulateMove(ServerState.PrevMove);
+		ClientTick(DeltaTime);
 
 	}
 
@@ -68,6 +68,29 @@ void UGoKartMovementReplicator::UpdateServerState(const FGoKartMove& Move)
 
 }
 
+void UGoKartMovementReplicator::ClientTick(float DeltaTime)
+{
+	ClientTimeSinceUpdate += DeltaTime;
+
+	if (ClientTimeBetweenLastUpdates < KINDA_SMALL_NUMBER) return;
+
+	FVector TargetLocation = ServerState.Transform.GetLocation();
+	float LerpRatio = ClientTimeSinceUpdate / ClientTimeBetweenLastUpdates;
+	FVector StartLocation = ClientStartTransform.GetLocation();
+
+	FVector NextLocation = FMath::LerpStable(StartLocation, TargetLocation, LerpRatio);
+
+	GetOwner()->SetActorLocation(NextLocation);
+
+	FQuat TargetRotation = ServerState.Transform.GetRotation();
+	FQuat StartRotation = ClientStartTransform.GetRotation();
+
+	FQuat NextRotation = FQuat::Slerp(StartRotation, TargetRotation, LerpRatio);
+
+	GetOwner()->SetActorRotation(NextRotation);
+
+}
+
 void UGoKartMovementReplicator::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -77,6 +100,22 @@ void UGoKartMovementReplicator::GetLifetimeReplicatedProps(TArray< FLifetimeProp
 }
 
 void UGoKartMovementReplicator::OnRep_ServerState()
+{
+	switch (GetOwnerRole())
+	{
+	case ROLE_AutonomousProxy:
+		AutonomousProxy_OnRep_ServerState();
+		break;
+	case ROLE_SimulatedProxy:
+		SimulatedProxy_OnRep_ServerState();
+		break;
+	default:
+		break;
+	}
+
+}
+
+void UGoKartMovementReplicator::AutonomousProxy_OnRep_ServerState()
 {
 	if (MovementComponent == nullptr) return;
 
@@ -90,6 +129,15 @@ void UGoKartMovementReplicator::OnRep_ServerState()
 		MovementComponent->SimulateMove(Move);
 
 	}
+
+}
+
+void UGoKartMovementReplicator::SimulatedProxy_OnRep_ServerState()
+{
+	ClientTimeBetweenLastUpdates = ClientTimeSinceUpdate;
+	ClientTimeSinceUpdate = 0;
+
+	ClientStartTransform = GetOwner()->GetActorTransform();
 
 }
 

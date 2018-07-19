@@ -45,6 +45,8 @@ private:
 
 	void UpdateServerState(const FGoKartMove& Move);
 
+	void ClientTick(float DeltaTime);
+
 	/**
 	* To replicate movement over a server we begin by applying Server, Reliable, WithValidation as properties in the UFUNCTION().
 	* Prefix function name with 'Server_'. This is the new name that we will bind our input to in the cpp.
@@ -60,8 +62,14 @@ private:
 	// Function called when ReplicatedTransform becomes replicated.
 	UFUNCTION()
 	void OnRep_ServerState();
+	void AutonomousProxy_OnRep_ServerState();
+	void SimulatedProxy_OnRep_ServerState();
 
 	TArray<FGoKartMove> UnacknowledgedMoves;
+
+	float ClientTimeSinceUpdate;
+	float ClientTimeBetweenLastUpdates;
+	FTransform ClientStartTransform;
 
 	UPROPERTY()
 	UGoKartMovementComponent* MovementComponent;
