@@ -4,26 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "GoKartMovementComponent.h"
 #include "GoKart.generated.h"
 
-
-USTRUCT()
-struct FGoKartMove
-{
-	GENERATED_USTRUCT_BODY()
-
-	UPROPERTY()
-	float Throttle;
-	UPROPERTY()
-	float SteeringThrow;
-
-	UPROPERTY()
-	float DeltaTime;
-
-	UPROPERTY()
-	float TimeStamp;
-
-};
 
 USTRUCT()
 struct FGoKartState
@@ -61,15 +44,7 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	void SimulateMove(const FGoKartMove& Move);
-
-	FGoKartMove CreateMove(float DeltaTime);
-
 	void ClearAcknowledgedMoves(FGoKartMove PrevMove);
-
-	FVector GetAirResistance();
-
-	FVector GetRollingResistance();
 
 	void MoveForward(float Value);
 
@@ -84,42 +59,6 @@ private:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_SendMove(FGoKartMove Move);
 
-	void ApplyRotation(float DeltaTime, float SteeringThrow);
-
-	void UpdateLocationFromVelocity(float DeltaTime);
-
-	// Mass of GoKart (kg)
-	UPROPERTY(EditAnywhere)
-	float Mass = 1000;
-
-	// Force applied to GoKart when throttle is fully engaged (N)
-	UPROPERTY(EditAnywhere)
-	float MaxDrivingForce = 10000;
-
-	// Minimum radius of the car turning circle at full steering lock (m)
-	UPROPERTY(EditAnywhere)
-	float MinTurningRadius = 10;
-
-	/**
-	 * Value that represents the aerodynamics of the GoKart. Higher value = higher drag.
-	 * AirResistance = -Speed^2 * DragCoefficient
-	 * ...therefore
-	 * DragCoefficient = AirResistance / Speed^2
-	 * which is...
-	 * 16 = 10000 / 25^2
-	 *
-	 */
-	UPROPERTY(EditAnywhere)
-	float DragCoefficient = 16;
-
-	/**
-	* Value that represents the Rolling Resistance of the GoKart. Higher value = higher rolling resistance.
-	* RollingResistance = RollingResistanceCoefficient * NormalForce
-	*
-	*/
-	UPROPERTY(EditAnywhere)
-	float RollingResistanceCoefficient = 0.015;
-
 	UPROPERTY(ReplicatedUsing = OnRep_ServerState)
 	FGoKartState ServerState;
 
@@ -127,12 +66,9 @@ private:
 	UFUNCTION()
 	void OnRep_ServerState();
 
-	FVector Velocity;
-
-	float Throttle;
-
-	float SteeringThrow;
-
 	TArray<FGoKartMove> UnacknowledgedMoves;
+
+	UPROPERTY(EditAnywhere)
+	UGoKartMovementComponent* MovementComponent;
 
 };
