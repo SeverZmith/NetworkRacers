@@ -24,6 +24,15 @@ struct FGoKartState
 
 };
 
+struct FHermiteCubicSpline
+{
+	FVector StartLocation, StartDerivative, TargetLocation, TargetDerivative;
+
+	FVector InterpolateLocation(float LerpRatio) const { return FMath::CubicInterp(StartLocation, StartDerivative, TargetLocation, TargetDerivative, LerpRatio); };
+	FVector InterpolateDerivative(float LerpRatio) const { return FMath::CubicInterpDerivative(StartLocation, StartDerivative, TargetLocation, TargetDerivative, LerpRatio); };
+
+};
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class NETWORKRACERS_API UGoKartMovementReplicator : public UActorComponent
 {
@@ -46,6 +55,16 @@ private:
 	void UpdateServerState(const FGoKartMove& Move);
 
 	void ClientTick(float DeltaTime);
+
+	FHermiteCubicSpline CreateSpline();
+
+	void InterpolateLocation(const FHermiteCubicSpline &Spline, float LerpRatio);
+
+	void InterpolateVelocity(const FHermiteCubicSpline &Spline, float LerpRatio);
+
+	void InterpolateRotation(float LerpRatio);
+
+	float VelocityToDerivative();
 
 	/**
 	* To replicate movement over a server we begin by applying Server, Reliable, WithValidation as properties in the UFUNCTION().
@@ -74,5 +93,10 @@ private:
 
 	UPROPERTY()
 	UGoKartMovementComponent* MovementComponent;
+
+	UPROPERTY()
+	USceneComponent* MeshOffsetRoot;
+	UFUNCTION(BlueprintCallable)
+	void SetMeshOffsetRoot(USceneComponent* Root) { MeshOffsetRoot = Root; };
 
 };
