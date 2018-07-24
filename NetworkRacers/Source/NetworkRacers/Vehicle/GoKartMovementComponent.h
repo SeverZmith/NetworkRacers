@@ -34,10 +34,8 @@ class NETWORKRACERS_API UGoKartMovementComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:	
-	// Sets default values for this component's properties
 	UGoKartMovementComponent();
 
-	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	void SimulateMove(const FGoKartMove& Move);
@@ -52,7 +50,6 @@ public:
 	void SetSteeringThrow(float Val) { SteeringThrow = Val; };
 
 protected:
-	// Called when the game starts
 	virtual void BeginPlay() override;
 
 private:
@@ -72,11 +69,11 @@ private:
 
 	// Force applied to GoKart when throttle is fully engaged (N)
 	UPROPERTY(EditAnywhere)
-	float MaxDrivingForce = 10000;
+	float MaxDrivingForce = 10000.f;
 
 	// Minimum radius of the car turning circle at full steering lock (m)
 	UPROPERTY(EditAnywhere)
-	float MinTurningRadius = 10;
+	float MinTurningRadius = 10.f;
 
 	/**
 	* Value that represents the aerodynamics of the GoKart. Higher value = higher drag.

@@ -7,19 +7,14 @@
 #include "GameFramework/GameStateBase.h"
 
 
-// Sets default values for this component's properties
 UGoKartMovementReplicator::UGoKartMovementReplicator()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 
 	SetIsReplicated(true);
 
 }
 
-
-// Called when the game starts
 void UGoKartMovementReplicator::BeginPlay()
 {
 	Super::BeginPlay();
@@ -28,8 +23,6 @@ void UGoKartMovementReplicator::BeginPlay()
 	
 }
 
-
-// Called every frame
 void UGoKartMovementReplicator::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
@@ -64,6 +57,7 @@ void UGoKartMovementReplicator::TickComponent(float DeltaTime, ELevelTick TickTy
 
 void UGoKartMovementReplicator::UpdateServerState(const FGoKartMove& Move)
 {
+	// Update player's move, location, and speed.
 	ServerState.PrevMove = Move;
 	ServerState.Transform = GetOwner()->GetActorTransform();
 	ServerState.Velocity = MovementComponent->GetVelocity();
@@ -79,6 +73,7 @@ void UGoKartMovementReplicator::ClientTick(float DeltaTime)
 
 	float LerpRatio = ClientTimeSinceUpdate / ClientTimeBetweenLastUpdates;
 
+	// Crete spline and interpolate variables along it.
 	FHermiteCubicSpline Spline = CreateSpline();
 
 	InterpolateLocation(Spline, LerpRatio);
@@ -91,6 +86,7 @@ void UGoKartMovementReplicator::ClientTick(float DeltaTime)
 
 FHermiteCubicSpline UGoKartMovementReplicator::CreateSpline()
 {
+	// Update spline variables.
 	FHermiteCubicSpline Spline;
 	Spline.TargetLocation = ServerState.Transform.GetLocation();
 	Spline.StartLocation = ClientStartTransform.GetLocation();
@@ -103,6 +99,7 @@ FHermiteCubicSpline UGoKartMovementReplicator::CreateSpline()
 
 void UGoKartMovementReplicator::InterpolateLocation(const FHermiteCubicSpline &Spline, float LerpRatio)
 {
+	// Move the actor to the interpolated location.
 	FVector NextLocation = Spline.InterpolateLocation(LerpRatio);
 	if (MeshOffsetRoot != nullptr)
 	{
@@ -114,6 +111,7 @@ void UGoKartMovementReplicator::InterpolateLocation(const FHermiteCubicSpline &S
 
 void UGoKartMovementReplicator::InterpolateVelocity(const FHermiteCubicSpline &Spline, float LerpRatio)
 {
+	// Interpolate and set the velocity.
 	FVector NextDerivative = Spline.InterpolateDerivative(LerpRatio);
 	FVector NextVelocity = NextDerivative / VelocityToDerivative();
 	MovementComponent->SetVelocity(NextVelocity);
@@ -125,6 +123,7 @@ void UGoKartMovementReplicator::InterpolateRotation(float LerpRatio)
 	FQuat TargetRotation = ServerState.Transform.GetRotation();
 	FQuat StartRotation = ClientStartTransform.GetRotation();
 
+	// Interpolate using Slerp for rotation so the bounds become -180 and 180 (spherical)
 	FQuat NextRotation = FQuat::Slerp(StartRotation, TargetRotation, LerpRatio);
 
 	if (MeshOffsetRoot != nullptr)
@@ -144,12 +143,14 @@ void UGoKartMovementReplicator::GetLifetimeReplicatedProps(TArray< FLifetimeProp
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	// Variables to replicate on server.
 	DOREPLIFETIME(UGoKartMovementReplicator, ServerState);
 
 }
 
 void UGoKartMovementReplicator::OnRep_ServerState()
 {
+	// When ServerState is replicated...
 	switch (GetOwnerRole())
 	{
 	case ROLE_AutonomousProxy:
@@ -164,6 +165,7 @@ void UGoKartMovementReplicator::OnRep_ServerState()
 
 }
 
+// As client.
 void UGoKartMovementReplicator::AutonomousProxy_OnRep_ServerState()
 {
 	if (MovementComponent == nullptr) return;
@@ -171,8 +173,10 @@ void UGoKartMovementReplicator::AutonomousProxy_OnRep_ServerState()
 	GetOwner()->SetActorTransform(ServerState.Transform);
 	MovementComponent->SetVelocity(ServerState.Velocity);
 
+	// Clear tracked moved.
 	ClearAcknowledgedMoves(ServerState.PrevMove);
 
+	// Iterate through UnacknowledgedMoves and simulate move.
 	for (const FGoKartMove& Move : UnacknowledgedMoves)
 	{
 		MovementComponent->SimulateMove(Move);
@@ -181,10 +185,12 @@ void UGoKartMovementReplicator::AutonomousProxy_OnRep_ServerState()
 
 }
 
+// As client to other clients.
 void UGoKartMovementReplicator::SimulatedProxy_OnRep_ServerState()
 {
 	if (MovementComponent == nullptr) return;
 
+	// Update client variables.
 	ClientTimeBetweenLastUpdates = ClientTimeSinceUpdate;
 	ClientTimeSinceUpdate = 0;
 
@@ -206,6 +212,7 @@ void UGoKartMovementReplicator::ClearAcknowledgedMoves(FGoKartMove PrevMove)
 
 	for (const FGoKartMove& Move : UnacknowledgedMoves)
 	{
+		// If next move happens after prev move update FreshMoves.
 		if (Move.TimeStamp > PrevMove.TimeStamp)
 		{
 			FreshMoves.Add(Move);
@@ -214,6 +221,7 @@ void UGoKartMovementReplicator::ClearAcknowledgedMoves(FGoKartMove PrevMove)
 
 	}
 
+	// Track moves before updating.
 	UnacknowledgedMoves = FreshMoves;
 
 }
@@ -223,6 +231,7 @@ void UGoKartMovementReplicator::Server_SendMove_Implementation(FGoKartMove Move)
 {
 	if (MovementComponent == nullptr) return;
 
+	// Simulate move on server.
 	ClientSimulatedTime += Move.DeltaTime;
 	MovementComponent->SimulateMove(Move);
 
@@ -234,9 +243,9 @@ void UGoKartMovementReplicator::Server_SendMove_Implementation(FGoKartMove Move)
 bool UGoKartMovementReplicator::Server_SendMove_Validate(FGoKartMove Move)
 {
 	/**
-	* This will check that our value is between 0 and 1.
-	* If the value is not between 0 and 1, then this function will return false.
-	* If any validation check returns false, the client will be disconnected.
+	* '_Validate' methods are where anti-cheat logic is placed.
+	*
+	* Here we check that our client is making valid moves and not manipulating time variables.
 	*
 	*/
 	float ProposedTime = ClientSimulatedTime + Move.DeltaTime;

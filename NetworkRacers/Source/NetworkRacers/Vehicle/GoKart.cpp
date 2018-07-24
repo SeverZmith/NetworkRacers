@@ -7,12 +7,11 @@
 #include "DrawDebugHelpers.h"
 
 
-// Sets default values
 AGoKart::AGoKart()
 {
- 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
+	// We want bReplicateMovement off so that we can do our own interpolation and handle movement replication with the GoKartMovementReplicator component.
 	bReplicateMovement = false;
 
 	MovementComponent = CreateDefaultSubobject<UGoKartMovementComponent>(TEXT("MovementComponent"));
@@ -20,14 +19,22 @@ AGoKart::AGoKart()
 
 }
 
-// Called when the game starts or when spawned
 void AGoKart::BeginPlay()
 {
 	Super::BeginPlay();
 
 	if (HasAuthority())
 	{
-		NetUpdateFrequency = 1;
+		/**
+		 * How frequently the authoritative actor should be considered for replication.
+		 * You want this number to be as low as possible to prevent excessive CPU or bandwidth usage.
+		 * Typical values for this variable are as follows:
+		 *		- 10.f (update every 0.1 seconds) for important or unpredictable actors such as player-controlled actors.
+		 *		- 5.f (update every 0.2 seconds) for slower-moving or more predictable actors such as AI-controlled actors.
+		 *		- 2.f (update every 0.5 seconds) for background or distant actors.
+		 *
+		 */
+		NetUpdateFrequency = 1.f; // In this example, this value is set very low to help visualize our interpolation of the simulated-proxy actor's position.
 
 	}
 	
@@ -35,6 +42,7 @@ void AGoKart::BeginPlay()
 
 FString GetEnumText(ENetRole Role)
 {
+	// Used to visualize remote roles of actors.
 	switch (Role)
 	{
 	case ROLE_None:
@@ -51,16 +59,14 @@ FString GetEnumText(ENetRole Role)
 
 }
 
-// Called every frame
 void AGoKart::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	DrawDebugString(GetWorld(), FVector(0, 0, 100.f), GetEnumText(Role), this, FColor::White, DeltaTime);
+	DrawDebugString(GetWorld(), FVector(0.f, 0.f, 100.f), GetEnumText(Role), this, FColor::White, DeltaTime);
 
 }
 
-// Called to bind functionality to input
 void AGoKart::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -74,6 +80,7 @@ void AGoKart::MoveForward(float Value)
 {
 	if (MovementComponent == nullptr) return;
 
+	// Send MoveForward input to movement component.
 	MovementComponent->SetThrottle(Value);
 
 }
@@ -82,6 +89,7 @@ void AGoKart::MoveRight(float Value)
 {
 	if (MovementComponent == nullptr) return;
 
+	// Send MoveRight input to movement component.
 	MovementComponent->SetSteeringThrow(Value);
 
 }

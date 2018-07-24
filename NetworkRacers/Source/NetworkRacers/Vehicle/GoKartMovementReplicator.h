@@ -28,6 +28,7 @@ struct FHermiteCubicSpline
 {
 	FVector StartLocation, StartDerivative, TargetLocation, TargetDerivative;
 
+	// Interpolate location and derivatives based on Hermite's Cubic Spline
 	FVector InterpolateLocation(float LerpRatio) const { return FMath::CubicInterp(StartLocation, StartDerivative, TargetLocation, TargetDerivative, LerpRatio); };
 	FVector InterpolateDerivative(float LerpRatio) const { return FMath::CubicInterpDerivative(StartLocation, StartDerivative, TargetLocation, TargetDerivative, LerpRatio); };
 
@@ -39,14 +40,11 @@ class NETWORKRACERS_API UGoKartMovementReplicator : public UActorComponent
 	GENERATED_BODY()
 
 public:	
-	// Sets default values for this component's properties
 	UGoKartMovementReplicator();
 
-	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 protected:
-	// Called when the game starts
 	virtual void BeginPlay() override;
 
 private:
@@ -90,7 +88,6 @@ private:
 	float ClientTimeBetweenLastUpdates;
 	FTransform ClientStartTransform;
 	FVector ClientStartVelocity;
-
 	float ClientSimulatedTime;
 
 	UPROPERTY()
@@ -98,6 +95,7 @@ private:
 
 	UPROPERTY()
 	USceneComponent* MeshOffsetRoot;
+
 	UFUNCTION(BlueprintCallable)
 	void SetMeshOffsetRoot(USceneComponent* Root) { MeshOffsetRoot = Root; };
 
